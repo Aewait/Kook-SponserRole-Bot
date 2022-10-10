@@ -100,6 +100,19 @@ async def fetch_role_list(guild_id:str,role_id:str):
             json_dict = json.loads(await response.text())
     return json_dict
 
+# 检查文件中是否有这个助力者的id
+def check_sponsor(it: dict,guild_id:str):
+    global SponsorDict
+    # 需要先保证原有txt里面没有保存该用户的id，才进行追加
+    if it['id'] in SponsorDict['data'][guild_id]:
+        return False
+
+    #原有txt内没有该用户信息，进行追加操作
+    SponsorDict['data'][guild_id][it['id']] = {}
+    SponsorDict['data'][guild_id][it['id']]['time'] = GetTime()
+    SponsorDict['data'][guild_id][it['id']]['name'] = f"{it['nickname']}#{it['identify_num']}"
+    return True
+
 # 设置助力者
 @bot.command(name="spr")
 async def spr_set(msg:Message,role_id:str="err",ch_id:str="err",*arg):
@@ -111,39 +124,63 @@ async def spr_set(msg:Message,role_id:str="err",ch_id:str="err",*arg):
         return
     try:
         global SponsorDict
-        ret_dict = await fetch_role_list(msg.ctx.guild.id,role_id)
-        if ret_dict['code']!=0:
+        guild_id = msg.ctx.guild.id
+        ret = await fetch_role_list(guild_id,role_id)
+        if ret['code']!=0:
             raise Exception("kook-api调用错误，请检查您的角色id是否正确")
+        if ch_id == "err":
+            ch_id = msg.ctx.channel.id
+        # 测试是否有发言权限
+        ch = await bot.client.fetch_public_channel(ch_id)
+        await bot.client.send(ch,f"这是一个发言权限测试，请忽略本条消息")
 
+        SponsorDict['guild'][guild_id]={}
+        SponsorDict['guild'][guild_id]['role_id'] = role_id
+        SponsorDict['guild'][guild_id]['channel_id']= ch_id
+        SponsorDict['guild'][guild_id]['set_time'] = GetTime()
         
-        
+        SponsorDict['data'][guild_id]={}
+        text = ""
+        for its in ret['data']['items']:
+            if check_sponsor(its,guild_id):
+                text+= f"感谢 (met){its['id']}(met) 对本服务器的助力\n"
+        # 遍历完成之后一次性发送
+        await bot.client.send(ch,text)
+        await msg.reply(f"设置成功!已开启了助力者感谢，第一波感谢信息已送出~\n频道：{ch.name}\n频道id：{ch_id}\n助力者角色id：{role_id}")
+        # 保存到文件
+        with open("./log/GuildLog.json", 'w', encoding='utf-8') as fw2:
+            json.dump(SponsorDict, fw2, indent=2, sort_keys=True, ensure_ascii=False)
+        print(f"[spr] G:{guild_id} C:{ch_id} Au:{msg.author_id} R:{role_id} set success")
     except Exception as result:
         await BaseException_Handler("spr",traceback.format_exc(),msg,bot)
         err_str = f"ERR! [{GetTime()}] hh\n```\n{traceback.format_exc()}\n```"
         await bot.client.send(debug_ch, err_str)#发送错误信息到指定频道
             
-# 检查文件中是否有这个助力者的id
-def check_sponsor(it: dict):
-    return     
-
 # 感谢助力者（每1h检查一次）
 @bot.task.add_interval(hours=1)
 async def thanks_sponser():
     print(f"[BOT.THX.TASK] start at {GetTime()}")
-    #需要服务器id和助力者id
+    for guild_id in SponsorDict['guild']:
+        ret = await fetch_role_list(guild_id,SponsorDict['guild'][guild_id]['role_id'])
+        # 用户数量相同，无需更新
+        sz = len(SponsorDict['data'][guild_id])
+        if ret['data']['meta']['total'] == sz:
+            print(f"[BOT.THX.TASK] G:{guild_id} No New_Sp, same_len [{sz}]")
+            continue
+        # 用户数量不同，遍历检查
+        log_text = f"[BOT.THX.TASK] {GetTime()} G:{guild_id} NewSp:"
+        send_text = ""
+        for its in ret['data']['items']:
+            if check_sponsor(its):
+                channel = await bot.client.fetch_public_channel(SponsorDict['guild'][guild_id]['channel_id'])#发送感谢信息的文字频道
+                send_text+= f"感谢 (met){its['id']}(met) 对本服务器的助力\n"
+                log_text += f"({its['id']}_{its['username']}#{its['identify_num']}) "
+        await bot.client.send(channel, send_text)
+        print(log_text)
     
-    #长度相同无需更新
-    ret = await fetch_role_list()
-    sz = len(SponsorDict)
-    if ret['data']['meta']['total'] == sz:
-        print(f"[BOT.THX.TASK] No new sponser, same_len [{sz}]")
-        return
-
-    for its in ret['data']['items']:
-        if check_sponsor(its) == 0:
-            channel = await bot.client.fetch_public_channel("8342620158040885")  #发送感谢信息的文字频道
-            await bot.client.send(channel, f"感谢 (met){its['id']}(met) 对本服务器的助力")
-            print(f"[%s] 感谢{its['nickname']}对本服务器的助力" % GetTime())
+    # 保存到文件
+    with open("./log/GuildLog.json", 'w', encoding='utf-8') as fw2:
+        json.dump(SponsorDict, fw2, indent=2, sort_keys=True, ensure_ascii=False)
     print(f"[BOT.THX.TASK] finish at {GetTime()}")
 
 
