@@ -79,7 +79,7 @@ async def help(msg:Message,*arg):
         text+="`/spr 助力者角色id` 在 当前 频道发送助力者感谢信息\n"
         text+="`/spr 助力者角色id 文字频道id` 在 指定 频道发送助力者感谢信息\n"
         text+="角色id获取方式：\n```\n个人设置-高级设置-打开开发者模式，进入服务器设置-角色设置-右键助力者角色-复制id\n文字频道id获取方式同上，打开开发者模式后，右键文字频道-复制id即可\n```"
-        text+="设置完成后，bot会每1h获取最新的助力者id，并在服务器内发送感谢信息"
+        text+="设置完成后，bot会每30m获取最新的助力者id，并在服务器内发送感谢信息"
         text+="`/spr-d` 取消助力者提醒\n"
         cm = CardMessage()
         c = Card(Module.Header(f"本bot支持的命令如下"),Module.Context(Element.Text("由MOAR#7134开发，开源代码见 [Github](https://github.com/Aewait/Kook-SponsorRole-Bot)",Types.Text.KMD)),Module.Divider())
@@ -196,7 +196,7 @@ async def spr_set(msg:Message,role_id:str="err",ch_id:str="err",*arg):
         await bot.client.send(debug_ch, err_str)#发送错误信息到指定频道
             
 # 感谢助力者（每1h检查一次）
-@bot.task.add_interval(minutes=1)
+@bot.task.add_interval(minutes=30)
 async def thanks_sponser():
     try:
         global SponsorDict
