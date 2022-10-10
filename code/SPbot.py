@@ -172,6 +172,7 @@ async def spr_set(msg:Message,role_id:str="err",ch_id:str="err",*arg):
         SponsorDict['guild'][guild_id]['role_id'] = role_id
         SponsorDict['guild'][guild_id]['channel_id']= ch_id
         SponsorDict['guild'][guild_id]['set_time'] = GetTime()
+        SponsorDict['guild'][guild_id]['set_user'] = msg.author_id
         
         SponsorDict['data'][guild_id]={}
         text = ""
