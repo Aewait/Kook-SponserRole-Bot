@@ -80,6 +80,7 @@ async def help(msg:Message,*arg):
         text+="`/spr 助力者角色id 文字频道id` 在 指定 频道发送助力者感谢信息\n"
         text+="角色id获取方式：\n```\n个人设置-高级设置-打开开发者模式，进入服务器设置-角色设置-右键助力者角色-复制id\n文字频道id获取方式同上，打开开发者模式后，右键文字频道-复制id即可\n```"
         text+="设置完成后，bot会每1h获取最新的助力者id，并在服务器内发送感谢信息"
+        text+="`/spr-d` 取消助力者提醒\n"
         cm = CardMessage()
         c = Card(Module.Header(f"本bot支持的命令如下"),Module.Context(Element.Text("由MOAR#7134开发，开源代码见 [Github](https://github.com/Aewait/Kook-SponsorRole-Bot)",Types.Text.KMD)),Module.Divider())
         c.append(Module.Section(Element.Text(text, Types.Text.KMD)))
@@ -89,7 +90,7 @@ async def help(msg:Message,*arg):
         await msg.reply(cm)
     except Exception as result:
         await BaseException_Handler("sphelp",traceback.format_exc(),msg,bot)
-        err_str = f"ERR! [{GetTime()}] hh\n```\n{traceback.format_exc()}\n```"
+        err_str = f"ERR! [{GetTime()}] sphelp\n```\n{traceback.format_exc()}\n```"
         await bot.client.send(debug_ch, err_str)#发送错误信息到指定频道
 
 ##################################################################################################
@@ -113,6 +114,34 @@ def check_sponsor(SpDict:dict,it: dict,guild_id:str):
     SpDict['data'][guild_id][it['id']]['time'] = GetTime()
     SpDict['data'][guild_id][it['id']]['name'] = f"{it['nickname']}#{it['identify_num']}"
     return True
+
+# 删除提醒
+@bot.command(name="spr-d")
+async def spr_delete(msg:Message,*arg):
+    if not logging(msg):
+        await msg.reply(f"当前命令需要在公共服务器内使用！")
+        print(f"[PrivateMessage] Au:{msg.author_id} inform reply, return")
+        return
+    try:
+        global SponsorDict
+        guild_id = msg.ctx.guild.id
+        if guild_id not in SponsorDict['guild']:
+            await msg.reply(f"您没有设置过当前服务器的助力者提醒！")
+            return
+        # 移动键值到删除列表中
+        SponsorDict['del_guild'][guild_id] = {}
+        SponsorDict['del_guild'][guild_id] = SponsorDict['guild'][guild_id]
+        del SponsorDict['guild'][guild_id]
+        # 回复
+        await msg.reply(f"助力者提醒删除成功")
+        # 保存到文件
+        with open("./log/GuildLog.json", 'w', encoding='utf-8') as fw2:
+            json.dump(SponsorDict, fw2, indent=2, sort_keys=True, ensure_ascii=False)
+        print(f"[spr-d] G:{guild_id} Au:{msg.author_id} move to del_guild")
+    except Exception as result:
+        await BaseException_Handler("spr-d",traceback.format_exc(),msg,bot)
+        err_str = f"ERR! [{GetTime()}] spr-d\n```\n{traceback.format_exc()}\n```"
+        await bot.client.send(debug_ch, err_str)#发送错误信息到指定频道
 
 # 设置助力者
 @bot.command(name="spr")
@@ -162,7 +191,7 @@ async def spr_set(msg:Message,role_id:str="err",ch_id:str="err",*arg):
         print(f"[spr] G:{guild_id} C:{ch_id} Au:{msg.author_id} R:{role_id} set success")
     except Exception as result:
         await BaseException_Handler("spr",traceback.format_exc(),msg,bot)
-        err_str = f"ERR! [{GetTime()}] hh\n```\n{traceback.format_exc()}\n```"
+        err_str = f"ERR! [{GetTime()}] spr\n```\n{traceback.format_exc()}\n```"
         await bot.client.send(debug_ch, err_str)#发送错误信息到指定频道
             
 # 感谢助力者（每1h检查一次）
