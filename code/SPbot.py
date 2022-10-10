@@ -78,6 +78,7 @@ async def help(msg:Message,*arg):
         text+="`/spr 助力者角色id` 在 当前 频道发送助力者感谢信息\n"
         text+="`/spr 助力者角色id 文字频道id` 在 指定 频道发送助力者感谢信息\n"
         text+="角色id获取方式：\n```\n个人设置-高级设置-打开开发者模式，进入服务器设置-角色设置-右键助力者角色-复制id\n文字频道id获取方式同上，打开开发者模式后，右键文字频道-复制id即可\n```"
+        text+="设置完成后，bot会每1h获取最新的助力者id，并在服务器内发送感谢信息"
         cm = CardMessage()
         c = Card(Module.Header(f"本bot支持的命令如下"),Module.Context(Element.Text("由MOAR#7134开发，开源代码见 [Github](https://github.com/Aewait/Kook-SponsorRole-Bot)",Types.Text.KMD)),Module.Divider())
         c.append(Module.Section(Element.Text(text, Types.Text.KMD)))
@@ -118,6 +119,7 @@ def check_sponsor(it: dict,guild_id:str):
 async def spr_set(msg:Message,role_id:str="err",ch_id:str="err",*arg):
     if not logging(msg):
         await msg.reply(f"当前命令需要在公共服务器内使用！")
+        print(f"[PrivateMessage] Au:{msg.author_id} inform reply, return")
         return
     elif role_id == "err":
         await msg.reply(f"您没有提供助力者角色id！获取方式：\n```\n个人设置-高级设置-打开开发者模式，进入服务器设置-角色设置-右键助力者角色-复制id\n```\n文字频道id获取方式同上，打开开发者模式后，右键文字频道-复制id即可")
