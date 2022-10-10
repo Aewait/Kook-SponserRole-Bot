@@ -1,4 +1,5 @@
 # encoding: utf-8:
+from copy import deepcopy
 import json
 import time
 import os
@@ -102,16 +103,15 @@ async def fetch_role_list(guild_id:str,role_id:str):
     return json_dict
 
 # 检查文件中是否有这个助力者的id
-def check_sponsor(it: dict,guild_id:str):
-    global SponsorDict
+def check_sponsor(SpDict:dict,it: dict,guild_id:str):
     # 需要先保证原有txt里面没有保存该用户的id，才进行追加
     if it['id'] in SponsorDict['data'][guild_id]:
         return False
 
     #原有txt内没有该用户信息，进行追加操作
-    SponsorDict['data'][guild_id][it['id']] = {}
-    SponsorDict['data'][guild_id][it['id']]['time'] = GetTime()
-    SponsorDict['data'][guild_id][it['id']]['name'] = f"{it['nickname']}#{it['identify_num']}"
+    SpDict['data'][guild_id][it['id']] = {}
+    SpDict['data'][guild_id][it['id']]['time'] = GetTime()
+    SpDict['data'][guild_id][it['id']]['name'] = f"{it['nickname']}#{it['identify_num']}"
     return True
 
 # 设置助力者
@@ -147,7 +147,7 @@ async def spr_set(msg:Message,role_id:str="err",ch_id:str="err",*arg):
         SponsorDict['data'][guild_id]={}
         text = ""
         for its in ret['data']['items']:
-            if check_sponsor(its,guild_id):
+            if check_sponsor(SponsorDict,its,guild_id):
                 text+= f"感谢 (met){its['id']}(met) 对本服务器的助力\n"
         # 遍历完成之后一次性发送
         await bot.client.send(ch,text)
@@ -166,31 +166,48 @@ async def spr_set(msg:Message,role_id:str="err",ch_id:str="err",*arg):
         await bot.client.send(debug_ch, err_str)#发送错误信息到指定频道
             
 # 感谢助力者（每1h检查一次）
-@bot.task.add_interval(hours=1)
+@bot.task.add_interval(minutes=1)
 async def thanks_sponser():
-    print(f"[BOT.THX.TASK] start at {GetTime()}")
-    for guild_id in SponsorDict['guild']:
-        ret = await fetch_role_list(guild_id,SponsorDict['guild'][guild_id]['role_id'])
-        # 用户数量相同，无需更新
-        sz = len(SponsorDict['data'][guild_id])
-        if ret['data']['meta']['total'] == sz:
-            print(f"[BOT.THX.TASK] G:{guild_id} No New_Sp, same_len [{sz}]")
-            continue
-        # 用户数量不同，遍历检查
-        log_text = f"[BOT.THX.TASK] {GetTime()} G:{guild_id} NewSp:"
-        send_text = ""
-        for its in ret['data']['items']:
-            if check_sponsor(its):
-                channel = await bot.client.fetch_public_channel(SponsorDict['guild'][guild_id]['channel_id'])#发送感谢信息的文字频道
-                send_text+= f"感谢 (met){its['id']}(met) 对本服务器的助力\n"
-                log_text += f"({its['id']}_{its['username']}#{its['identify_num']}) "
-        await bot.client.send(channel, send_text)
-        print(log_text)
-    
-    # 保存到文件
-    with open("./log/GuildLog.json", 'w', encoding='utf-8') as fw2:
-        json.dump(SponsorDict, fw2, indent=2, sort_keys=True, ensure_ascii=False)
-    print(f"[BOT.THX.TASK] finish at {GetTime()}")
+    try:
+        global SponsorDict
+        print(f"[BOT.THX.TASK] start at {GetTime()}")
+        TempDict = deepcopy(SponsorDict)
+        for guild_id in SponsorDict['guild']:
+            ret = await fetch_role_list(guild_id,SponsorDict['guild'][guild_id]['role_id'])
+            if ('该用户不在该服务器内' in ret['message']) or ret['code']!=0:
+                log_str = f"ERR! [BOT.THX.TASK] {ret}\n"
+                log_str +=f"[BOT.THX.TASK] del {guild_id}"
+                # 赋值后删除（留档）
+                TempDict['err_guild'][guild_id] = deepcopy(TempDict['guild'][guild_id])
+                del TempDict['data'][guild_id]
+                del TempDict['guild'][guild_id]
+                print(log_str)
+                continue
+            # 用户数量相同，无需更新
+            sz = len(SponsorDict['data'][guild_id])
+            if ret['data']['meta']['total'] == sz:
+                print(f"[BOT.THX.TASK] G:{guild_id} No New_Sp, same_len [{sz}]")
+                continue
+            # 用户数量不同，遍历检查
+            log_text = f"[BOT.THX.TASK] {GetTime()} G:{guild_id} NewSp:"
+            send_text = ""
+            for its in ret['data']['items']:
+                if check_sponsor(TempDict,its,guild_id):
+                    channel = await bot.client.fetch_public_channel(SponsorDict['guild'][guild_id]['channel_id'])#发送感谢信息的文字频道
+                    send_text+= f"感谢 (met){its['id']}(met) 对本服务器的助力\n"
+                    log_text += f"({its['id']}_{its['username']}#{its['identify_num']}) "
+            await bot.client.send(channel, send_text)
+            print(log_text)
+        
+        # 保存到文件
+        SponsorDict = TempDict
+        with open("./log/GuildLog.json", 'w', encoding='utf-8') as fw2:
+            json.dump(SponsorDict, fw2, indent=2, sort_keys=True, ensure_ascii=False)
+        print(f"[BOT.THX.TASK] finish at {GetTime()}")
+    except Exception as result:
+        err_str = f"ERR! [{GetTime()}] [BOT.THX.TASK]\n```\n{traceback.format_exc()}\n```"
+        print(err_str)
+        await bot.client.send(debug_ch, err_str)#发送错误信息到指定频道
 
 
 # 开机获取debug频道
