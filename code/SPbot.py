@@ -135,7 +135,10 @@ async def spr_set(msg:Message,role_id:str="err",ch_id:str="err",*arg):
         # 测试是否有发言权限
         ch = await bot.client.fetch_public_channel(ch_id)
         await bot.client.send(ch,f"这是一个发言权限测试，请忽略本条消息")
-
+        isGuIN = False
+        if guild_id in SponsorDict['guild']:
+            isGuIN = True
+        # 设置信息        
         SponsorDict['guild'][guild_id]={}
         SponsorDict['guild'][guild_id]['role_id'] = role_id
         SponsorDict['guild'][guild_id]['channel_id']= ch_id
@@ -148,7 +151,11 @@ async def spr_set(msg:Message,role_id:str="err",ch_id:str="err",*arg):
                 text+= f"感谢 (met){its['id']}(met) 对本服务器的助力\n"
         # 遍历完成之后一次性发送
         await bot.client.send(ch,text)
-        await msg.reply(f"设置成功!已开启了助力者感谢，第一波感谢信息已送出~\n频道：{ch.name}\n频道id：{ch_id}\n助力者角色id：{role_id}")
+        if isGuIN:
+            text_reply = f"更新成功!第一波感谢信息已送出~\n频道：{ch.name}\n频道id：{ch_id}\n助力者角色id：{role_id}"
+        else:
+            text_reply = f"设置成功!第一波感谢信息已送出~\n频道：{ch.name}\n频道id：{ch_id}\n助力者角色id：{role_id}"
+        await msg.reply(text_reply)
         # 保存到文件
         with open("./log/GuildLog.json", 'w', encoding='utf-8') as fw2:
             json.dump(SponsorDict, fw2, indent=2, sort_keys=True, ensure_ascii=False)
