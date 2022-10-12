@@ -40,3 +40,5 @@ kook的助力者感谢bot。服务器新增助力用户的时候，在指定频�
 基本框架：[khl.py](https://github.com/TWT233/khl.py) 提供的`kook sdk`以及使用教程
 
 kook api文档：[官方文档](https://developer.kookapp.cn/doc/http/guild#%E8%8E%B7%E5%8F%96%E6%9C%8D%E5%8A%A1%E5%99%A8%E4%B8%AD%E7%9A%84%E7%94%A8%E6%88%B7%E5%88%97%E8%A1%A8) 通过`aiohttp`库调用api
+
+关于code里面的makefile，这是用于linux下快速启动bot后台运行的。如果你想在自己的linux服务器使用，请把里面的`py3`改成你自己云服务器上的python（就是用来命令行运行python程序的哪一个，如`python3`）
