@@ -22,7 +22,7 @@ debug_ch = None
 @bot.task.add_interval(minutes=30)
 async def botmarket():
     api ="http://bot.gekj.net/api/v1/online.bot"
-    headers = {'uuid':'8b3b4c14-d20c-4a23-9c71-da4643b50262'}
+    headers = {'uuid':'cbc11a5f-609f-4274-8656-765c5f96e19b'}
     async with aiohttp.ClientSession() as session:
         await session.post(api, headers=headers)
 
