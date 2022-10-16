@@ -221,9 +221,9 @@ async def thanks_sponser():
             # 用户数量不同，遍历检查
             log_text = f"[BOT.THX.TASK] {GetTime()} G:{guild_id} NewSp:"
             send_text = ""
+            channel = await bot.client.fetch_public_channel(SponsorDict['guild'][guild_id]['channel_id'])#发送感谢信息的文字频道
             for its in ret['data']['items']:
                 if check_sponsor(TempDict,its,guild_id):
-                    channel = await bot.client.fetch_public_channel(SponsorDict['guild'][guild_id]['channel_id'])#发送感谢信息的文字频道
                     send_text+= f"感谢 (met){its['id']}(met) 对本服务器的助力\n"
                     log_text += f"({its['id']}_{its['username']}#{its['identify_num']}) "
             await bot.client.send(channel, send_text)
