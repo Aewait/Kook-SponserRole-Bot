@@ -175,7 +175,7 @@ async def spr_set(msg:Message,role_id:str="err",ch_id:str="err",*arg):
         SponsorDict['guild'][guild_id]['set_user'] = msg.author_id
         
         SponsorDict['data'][guild_id]={}
-        text = ""
+        text = "这是一个助力者感谢的测试\n"
         for its in ret['data']['items']:
             if check_sponsor(SponsorDict,its,guild_id):
                 text+= f"感谢 (met){its['id']}(met) 对本服务器的助力\n"
