@@ -134,17 +134,18 @@ async def spr_set(msg:Message,channel:str="",*arg):
         if ret:
             page = 1
             text = f"**这是一个助力者感谢的测试**\n本服务器助力者感谢初始化 page: {page}\n\n"
-            last_user = {}
+            last_user = ret[0]
+            count = 1
             for its in ret:
-                # 初始化
-                if not last_user:last_user = its
                 # 如果当前用户和上一个用户相同，直接跳过（合并成一个）
-                elif its['user_id'] == last_user['user_id'] and its["start_time"] == last_user["start_time"]:
+                if its['user_id'] == last_user['user_id'] and its["start_time"] == last_user["start_time"]:
                     last_user = its
+                    count+=1 # 计算该用户助力包个数
                     continue
-                # 设置信息
-                text+= f"感谢 (met){its['user_id']}(met) 对本服务器的助力 {getTimeFromStamp(its['start_time'])}\n"
-                last_user = its
+                # 出现了不相同的，设置上一个的信息
+                text+= f"感谢 (met){last_user['user_id']}(met) 对本服务器的助力×{count} {getTimeFromStamp(last_user['start_time'])}\n"
+                count = 1 # 重置
+                last_user = its 
                 if len(text) >= 3000: # 长度超限
                     cm = await kookApi.get_card_msg(text)
                     await ch.send(cm) # 发送
@@ -207,6 +208,7 @@ async def thanks_sponser_task():
                 base_send_text:str = TempDict['guild'][guild_id]['send_text']
                 is_met_in = "(met)(met)" in base_send_text # 正确配置了
                 last_user = {} # 上一个用户
+                count = 1
                 for its in ret:
                     # 信息不在，才发送
                     if not await check_sponsor(TempDict,guild_id,its):
@@ -215,16 +217,18 @@ async def thanks_sponser_task():
                         # 如果当前用户和上一个用户相同，直接跳过（合并成一个）
                         elif its['user_id'] == last_user['user_id'] and its["start_time"] == last_user["start_time"]:
                             last_user = its
+                            count += 1
                             continue
                         # 设置上一个用户
                         last_user = its
                         # 正确配置了才用用户自定义的text
                         if is_met_in:
                             send_text+= base_send_text.replace("(met)(met)",f"(met){its['user']['id']}(met)")
-                            send_text+= f" {getTimeFromStamp(its['start_time'])}"
+                            send_text+= f"×{count} {getTimeFromStamp(its['start_time'])}"
                         else:
-                            send_text+= f"感谢 (met){its['user']['id']}(met) 对本服务器的助力 {getTimeFromStamp(its['start_time'])}\n"
+                            send_text+= f"感谢 (met){its['user']['id']}(met) 对本服务器的助力×{count} {getTimeFromStamp(its['start_time'])}\n"
                         # 添加到记录中
+                        count = 1
                         log_text += f"({its['user']['id']}_{its['user']['username']}#{its['user']['identify_num']}) "
                     # 如果感谢信息超过了3000字，就需要提前发出
                     if len(send_text) > 3000:
