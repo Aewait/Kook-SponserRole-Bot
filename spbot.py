@@ -5,61 +5,28 @@ import time
 import os
 import aiohttp
 import traceback
-from khl import Message, PrivateMessage, Bot
+from khl import Message, PrivateMessage, Bot,Channel
 from khl.card import Card, CardMessage, Element, Module, Types, Struct
 
-# 初始化bot
-with open('./config/config.json', 'r', encoding='utf-8') as f:
-    config = json.load(f)
-# 用读取来的 config 初始化 bot，字段对应即可
-bot = Bot(token=config['token'])
-# 初始化bot header 来调用api
-kook_base_url = "https://www.kookapp.cn"
-kook_headers = {f'Authorization': f"Bot {config['token']}"}
-debug_ch = None
+from utils.file import bot,config,SponsorDict,logging,loggingE,BaseException_Handler,save_all_files
+from utils.myLog import _log
+from utils.gtime import getTime
+
+debug_ch:Channel
+"""发送错误日志的频道"""
+start_time = getTime()
+"""机器人启动时间"""
 
 # 向botmarket通信
-@bot.task.add_interval(minutes=30)
+@bot.task.add_interval(minutes=20)
 async def botmarket():
     api ="http://bot.gekj.net/api/v1/online.bot"
     headers = {'uuid':'cbc11a5f-609f-4274-8656-765c5f96e19b'}
     async with aiohttp.ClientSession() as session:
         await session.post(api, headers=headers)
 
-# 加载文件
-with open('./log/GuildLog.json', 'r', encoding='utf-8') as f:
-    SponsorDict = json.load(f)
-
 ######################################################################################
 
-#将获取当前时间封装成函数方便使用
-def GetTime():  
-    return time.strftime("%y-%m-%d %H:%M:%S", time.localtime())
-
-# 在控制台打印msg内容，用作日志
-def logging(msg: Message):
-    now_time = GetTime()
-    if isinstance(msg, PrivateMessage):
-        print(f"[{now_time}] PrivateMessage - Au:{msg.author_id}_{msg.author.username}#{msg.author.identify_num} = {msg.content}")
-        return False
-    else:
-        print(f"[{now_time}] G:{msg.ctx.guild.id} - C:{msg.ctx.channel.id} - Au:{msg.author_id}_{msg.author.username}#{msg.author.identify_num} = {msg.content}")
-        return True
-
-# 基础的错误管理
-async def BaseException_Handler(def_name:str,excp,msg:Message,bot:Bot=bot,help=""):
-    err_str = f"ERR! [{GetTime()}] {def_name} Au:{msg.author_id}\n```\n{excp}\n```"
-    print(err_str)
-    cm0 = CardMessage()
-    c = Card()
-    c.append(Module.Header(f"很抱歉，发生了一些错误"))
-    c.append(Module.Divider())
-    c.append(Module.Section(Element.Text(f"{err_str}\n\n{help}", Types.Text.KMD)))
-    c.append(Module.Divider())
-    c.append(
-        Module.Section('有任何问题，请加入帮助服务器与我联系', Element.Button('帮助', 'https://kook.top/gpbTwZ', Types.Click.LINK)))
-    cm0.append(c)
-    await msg.reply(cm0)
 
 @bot.command(name="hh")
 async def hello(msg:Message,*arg):
@@ -68,7 +35,7 @@ async def hello(msg:Message,*arg):
         await msg.reply(f"hello world!")
     except Exception as result:
         await BaseException_Handler("hh",traceback.format_exc(),msg,bot)
-        err_str = f"ERR! [{GetTime()}] hh\n```\n{traceback.format_exc()}\n```"
+        err_str = f"ERR! [{getTime()}] hh\n```\n{traceback.format_exc()}\n```"
         await bot.client.send(debug_ch, err_str)#发送错误信息到指定频道
         
 @bot.command(name="sphelp")
@@ -90,18 +57,11 @@ async def help(msg:Message,*arg):
         await msg.reply(cm)
     except Exception as result:
         await BaseException_Handler("sphelp",traceback.format_exc(),msg,bot)
-        err_str = f"ERR! [{GetTime()}] sphelp\n```\n{traceback.format_exc()}\n```"
+        err_str = f"ERR! [{getTime()}] sphelp\n```\n{traceback.format_exc()}\n```"
         await bot.client.send(debug_ch, err_str)#发送错误信息到指定频道
 
 ##################################################################################################
 
-# 获取服务器指定角色的用户列表
-async def fetch_role_list(guild_id:str,role_id:str):
-    api = f"https://www.kaiheila.cn/api/v3/guild/user-list?guild_id={guild_id}&role_id={role_id}"
-    async with aiohttp.ClientSession() as session:
-        async with session.post(api, headers=kook_headers) as response:
-            json_dict = json.loads(await response.text())
-    return json_dict
 
 # 检查文件中是否有这个助力者的id
 def check_sponsor(SpDict:dict,it: dict,guild_id:str):
@@ -111,7 +71,7 @@ def check_sponsor(SpDict:dict,it: dict,guild_id:str):
 
     #原有txt内没有该用户信息，进行追加操作
     SpDict['data'][guild_id][it['id']] = {}
-    SpDict['data'][guild_id][it['id']]['time'] = GetTime()
+    SpDict['data'][guild_id][it['id']]['time'] = getTime()
     SpDict['data'][guild_id][it['id']]['name'] = f"{it['nickname']}#{it['identify_num']}"
     return True
 
@@ -140,7 +100,7 @@ async def spr_delete(msg:Message,*arg):
         print(f"[spr-d] G:{guild_id} Au:{msg.author_id} move to del_guild")
     except Exception as result:
         await BaseException_Handler("spr-d",traceback.format_exc(),msg,bot)
-        err_str = f"ERR! [{GetTime()}] spr-d\n```\n{traceback.format_exc()}\n```"
+        err_str = f"ERR! [{getTime()}] spr-d\n```\n{traceback.format_exc()}\n```"
         await bot.client.send(debug_ch, err_str)#发送错误信息到指定频道
 
 # 设置助力者
@@ -171,7 +131,7 @@ async def spr_set(msg:Message,role_id:str="err",ch_id:str="err",*arg):
         SponsorDict['guild'][guild_id]={}
         SponsorDict['guild'][guild_id]['role_id'] = role_id
         SponsorDict['guild'][guild_id]['channel_id']= ch_id
-        SponsorDict['guild'][guild_id]['set_time'] = GetTime()
+        SponsorDict['guild'][guild_id]['set_time'] = getTime()
         SponsorDict['guild'][guild_id]['set_user'] = msg.author_id
         
         SponsorDict['data'][guild_id]={}
@@ -192,7 +152,7 @@ async def spr_set(msg:Message,role_id:str="err",ch_id:str="err",*arg):
         print(f"[spr] G:{guild_id} C:{ch_id} Au:{msg.author_id} R:{role_id} set success")
     except Exception as result:
         await BaseException_Handler("spr",traceback.format_exc(),msg,bot)
-        err_str = f"ERR! [{GetTime()}] spr\n```\n{traceback.format_exc()}\n```"
+        err_str = f"ERR! [{getTime()}] spr\n```\n{traceback.format_exc()}\n```"
         await bot.client.send(debug_ch, err_str)#发送错误信息到指定频道
             
 # 感谢助力者（每1h检查一次）
@@ -200,7 +160,7 @@ async def spr_set(msg:Message,role_id:str="err",ch_id:str="err",*arg):
 async def thanks_sponser():
     try:
         global SponsorDict
-        print(f"[BOT.THX.TASK] start at {GetTime()}")
+        print(f"[BOT.THX.TASK] start at {getTime()}")
         TempDict = deepcopy(SponsorDict)
         for guild_id in SponsorDict['guild']:
             try:
@@ -220,7 +180,7 @@ async def thanks_sponser():
                     print(f"[BOT.THX.TASK] G:{guild_id} No New_Sp, same_len [{sz}]")
                     continue
                 # 用户数量不同，遍历检查
-                log_text = f"[BOT.THX.TASK] {GetTime()} G:{guild_id} NewSp:"
+                log_text = f"[BOT.THX.TASK] {getTime()} G:{guild_id} NewSp:"
                 send_text = ""
                 channel = await bot.client.fetch_public_channel(SponsorDict['guild'][guild_id]['channel_id'])#发送感谢信息的文字频道
                 for its in ret['data']['items']:
@@ -231,7 +191,7 @@ async def thanks_sponser():
                     await bot.client.send(channel, send_text)
                 print(log_text)
             except Exception as result:
-                err_str = f"ERR! [{GetTime()}] TASK.G:{guild_id}\n```\n{traceback.format_exc()}\n```"
+                err_str = f"ERR! [{getTime()}] TASK.G:{guild_id}\n```\n{traceback.format_exc()}\n```"
                 # 赋值后删除（留档）
                 TempDict['err_guild'][guild_id] = deepcopy(TempDict['guild'][guild_id])
                 del TempDict['data'][guild_id]
@@ -243,9 +203,9 @@ async def thanks_sponser():
         SponsorDict = TempDict
         with open("./log/GuildLog.json", 'w', encoding='utf-8') as fw2:
             json.dump(SponsorDict, fw2, indent=2, sort_keys=True, ensure_ascii=False)
-        print(f"[BOT.THX.TASK] finish at {GetTime()}")
+        print(f"[BOT.THX.TASK] finish at {getTime()}")
     except Exception as result:
-        err_str = f"ERR! [{GetTime()}] [BOT.THX.TASK]\n```\n{traceback.format_exc()}\n```"
+        err_str = f"ERR! [{getTime()}] [BOT.THX.TASK]\n```\n{traceback.format_exc()}\n```"
         print(err_str)
         await bot.client.send(debug_ch, err_str)#发送错误信息到指定频道
 
@@ -255,13 +215,14 @@ async def thanks_sponser():
 async def loading_channel():
     try:
         global debug_ch
-        debug_ch = await bot.client.fetch_public_channel("6248953582412867")
+        debug_ch = await bot.client.fetch_public_channel(config['debug_ch'])
         print("[BOT.START] fetch_public_channel success")
     except:
         print("[BOT.START] fetch_public_channel failed")
         os._exit(-1)  #出现错误直接退出程序
         
-# 开机的时候打印一次时间，记录重启时间
-print(f"Start at: [%s]"%GetTime())
-# 开机
-bot.run()
+if __name__ == '__main__':
+    # 开机的时候打印一次时间，记录开启时间
+    _log.info(f"[BOT] Start at {start_time}")
+    # 开机
+    bot.run() 
