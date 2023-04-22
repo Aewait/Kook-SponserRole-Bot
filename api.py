@@ -3,7 +3,7 @@ from aiohttp import web
 
 from utils.gtime import getTime
 from utils.myLog import _log
-from utils.apiHandler import afd_request
+from utils.afd.apiHandler import afd_request
 
 # 初始化节点
 routes = web.RouteTableDef()

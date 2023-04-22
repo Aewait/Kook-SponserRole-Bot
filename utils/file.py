@@ -155,5 +155,6 @@ async def save_all_files():
     global FlieSaveLock
     async with FlieSaveLock:
         write_file(GuildLogPath, SponsorDict)
+        write_file(AfdPath, AfdWebhook)
 
     _log.info(f"[save.file] save file success")

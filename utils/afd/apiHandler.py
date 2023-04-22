@@ -1,8 +1,8 @@
 import json
 from khl.card import CardMessage,Card,Module,Element,Types
 
-from .myLog import _log
-from .file import AfdWebhook,bot
+from ..myLog import _log
+from ..file import AfdWebhook,bot
 
 def get_order_id_dict(custom_order_id:str)->dict:
     """解析custom_order_id"""
