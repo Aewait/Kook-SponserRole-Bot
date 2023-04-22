@@ -37,7 +37,7 @@ async def afd_request(request):
             text = ""
             if 'plan_title' in params['data']['order']:
                 text = f"商品：{params['data']['order']['plan_title']}\n"
-                text+= f"商品ID：{plan_id}"
+                text+= f"商品ID：{plan_id}\n"
             user_id = params['data']['order']['user_id'] # afd用户id
             user_id = user_id[0:6]
             text += f"用户：{user_id}\n"
