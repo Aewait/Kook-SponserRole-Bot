@@ -139,7 +139,7 @@ async def spr_set(msg:Message,channel:str="",*arg):
             page = 1
             text = f"**这是一个助力者感谢的测试**\n本服务器助力者感谢初始化 page: {page}\n\n"
             last_user = ret[0]
-            count = 1
+            count = 0 # 第一个用户肯定会被判定为相等，会被+1，所以是0开始。避免被多加
             for its in ret:
                 # 如果当前用户和上一个用户相同，直接跳过（合并成一个）
                 if its['user_id'] == last_user['user_id'] and its["start_time"] == last_user["start_time"]:
