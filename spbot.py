@@ -8,17 +8,13 @@ import asyncio
 from khl import Message, PrivateMessage, Bot,Channel,requester
 from khl.card import Card, CardMessage, Element, Module, Types, Struct
 
-from utils.file import bot,config,SponsorDict,logging,BaseException_Handler,save_all_files
+from utils.file import bot,config,SponsorDict,logging,BaseException_Handler,save_all_files,THX_TASK_INTERVEL,start_time
 from utils.myLog import _log
 from utils.gtime import getTime,getTimeFromStamp
-from utils import kookApi
+from utils import kookApi,help
 
 debug_ch:Channel
 """发送错误日志的频道"""
-start_time = getTime()
-"""机器人启动时间"""
-THX_TASK_INTERVEL=30
-"""感谢助力者任务触发时间间隔（分钟）"""
 
 # 向botmarket通信
 @bot.task.add_interval(minutes=20)
@@ -44,24 +40,10 @@ async def hello(msg:Message,*arg):
         await BaseException_Handler("hh",traceback.format_exc(),msg,debug_ch)
         
 @bot.command(name="sphelp",aliases=['sp-help','sp-h'],case_sensitive=False)
-async def help(msg:Message,*arg):
+async def help_cmd(msg:Message,*arg):
     logging(msg)
     try:
-        text = "`/hh` 测试bot是否上线/是否有发言权限\n"
-        text+= "`/spr` 在 当前 频道发送助力者感谢信息\n"
-        text+= "`/spr #文字频道` 在 指定 频道发送助力者感谢信息\n"
-        text+= "`/spr-d` 取消助力者提醒\n"
-        text+= "`/spr-text 内容` 配置感谢助力者的文字，需要有`(met)(met)`来标识@用户的位置。默认配置：\n"
-        text+= "```\n感谢 (met)(met) 对本服务器的助力\n```\n"
-        text+= "默认配置的效果：\n"
-        text+= "```\n感谢 @用户A 对本服务器的助力\n```\n"
-        text+=f"设置完成后，bot会每{THX_TASK_INTERVEL}m获取最新的助力者id，并在服务器内发送配置好的感谢信息\n"
-        cm = CardMessage()
-        c = Card(Module.Header(f"本bot支持的命令如下"),Module.Context(Element.Text(f"开机于：{start_time} | 开源代码见 [Github](https://github.com/musnwos/Kook-SponsorRole-Bot)",Types.Text.KMD)),Module.Divider())
-        c.append(Module.Section(Element.Text(text, Types.Text.KMD)))
-        c.append(Module.Divider())
-        c.append(Module.Section('有任何问题，请加入帮助服务器与我联系', Element.Button('帮助', 'https://kook.top/gpbTwZ', Types.Click.LINK)))
-        cm.append(c)
+        cm = help.get_help_card()
         await msg.reply(cm)
     except Exception as result:
         await BaseException_Handler("sphep",traceback.format_exc(),msg,debug_ch)

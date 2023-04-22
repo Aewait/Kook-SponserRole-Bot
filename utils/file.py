@@ -107,6 +107,10 @@ SponsorDict = {}
 """服务器助力者日志"""
 AfdWebhook = {}
 """爱发电的wh请求"""
+THX_TASK_INTERVEL=30
+"""感谢助力者任务触发时间间隔（分钟）"""
+start_time = getTime()
+"""机器人启动时间"""
 # 初始化机器人方便其他模组调用
 bot = Bot(token=config['bot']['token'])  # websocket
 """main bot"""
