@@ -28,12 +28,12 @@ def logging(msg: Message) -> bool:
     - false：私聊，不给运行"""
     if isinstance(msg,PrivateMessage):
         _log.info(
-            f"PmMsg - Au:{msg.author_id} {msg.author.username}#{msg.author.identify_num} - content:{msg.content}"
+            f"PmMsg - Au:{msg.author_id} {msg.author.username}#{msg.author.identify_num} = {msg.content}"
         )
         return False
     else:
         _log.info(
-            f"G:{msg.ctx.guild.id} - C:{msg.ctx.channel.id} - Au:{msg.author_id} {msg.author.username}#{msg.author.identify_num} - content:{msg.content}"
+            f"G:{msg.ctx.guild.id} - C:{msg.ctx.channel.id} - Au:{msg.author_id} {msg.author.username}#{msg.author.identify_num} = {msg.content}"
         )
         return True
 

@@ -19,7 +19,7 @@ async def get_help_card():
     text+= "`/afd-cl` 删除本服务器所有绑定的爱发电webhook\n"
     text+= "`/afd-cl 商品id` 删除指定商品id的爱发电webhook\n"
     text+= "商品id获取：在爱发电主页，点击你的赞助商品，进入付款页面。页面url中的plan_id=后面就是商品id，一直到&截止。示例如下\n"
-    text+= "```\nplan_id=a45353328af911eb973052540025c37&\na45353328af911eb973052540025c37即为商品id\n```\n"
+    text+= "```\nplan_id=a45353328af911eb973052540025c37&\n商品id为a45353328af911eb973052540025c37\n```\n"
     text+=f"设置完成后，如果爱发电有人购买指定商品，则会发送信息到当前频道。"
     text+=f"商品id只能被一个服务器绑定。绑定后，其余服务器无法绑定\n"
     text+=f"爱发电webhook管理页：[开发者](https://afdian.net/dashboard/dev)\n"
