@@ -101,6 +101,9 @@ async def guild_boost_all(guild_id:str,start_time=0,end_time=0):
     - 返回结果：包含用户信息dict的list
     """
     ret = await guild_boost(guild_id,start_time,end_time,page=1) # 首页
+    if ret['code']!=0:
+        raise Exception(f"获取助力者api调用错误！G:{guild_id} | {ret}")
+
     page_total = ret['data']['meta']['page_total'] # 完整页面
     user_total = ret['data']['meta']['total']   # 助力者的所有用户计数器
     user_list:list = ret['data']['items'] # 第一页的用户
