@@ -1,3 +1,7 @@
+.PHONY:ps
+ps:
+	ps jax | head -1 && ps jax | grep spbot.py |  grep -v grep
+
 .PHONY:run
 run:
-	nohup py3 -u SPbot.py >> ./log/bot.log 2>&1 &
+	nohup python3.10 -u spbot.py >> ./log/nohup.log 2>&1 &
