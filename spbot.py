@@ -129,22 +129,33 @@ async def spr_set(msg:Message,channel:str="",*arg):
         # 获取所有助力者
         ret = await kookApi.guild_boost_all(guild_id)
         # 新建data键值
-        SponsorDict['data'][guild_id]= ret
-        page = 1
-        text = f"**这是一个助力者感谢的测试**\n本服务器助力者感谢初始化 page: {page}\n\n"
-        for its in ret:
-            text+= f"感谢 (met){its['user_id']}(met) 对本服务器的助力 {getTimeFromStamp(its['start_time'])}\n"
-            if len(text) >= 3000: # 长度超限
-                cm = await kookApi.get_card_msg(text)
-                await ch.send(cm)
-                text = f"**这是一个助力者感谢的测试**\n本服务器助力者感谢初始化 page: {page}\n\n"
-                page+=1
-                _log.info(f"[spr] msg send {page}")
-                await asyncio.sleep(0.2)
-        # 遍历完成之后一次性发送
-        cm = await kookApi.get_card_msg(text)
-        await ch.send(cm)
-        # 发送成功提示信息
+        SponsorDict['data'][guild_id] = ret
+        # 助力者不为空才发信息
+        if ret:
+            page = 1
+            text = f"**这是一个助力者感谢的测试**\n本服务器助力者感谢初始化 page: {page}\n\n"
+            last_user = {}
+            for its in ret:
+                # 初始化
+                if not last_user:last_user = its
+                # 如果当前用户和上一个用户相同，直接跳过（合并成一个）
+                elif its['user_id'] == last_user['user_id'] and its["start_time"] == last_user["start_time"]:
+                    last_user = its
+                    continue
+                # 设置信息
+                text+= f"感谢 (met){its['user_id']}(met) 对本服务器的助力 {getTimeFromStamp(its['start_time'])}\n"
+                last_user = its
+                if len(text) >= 3000: # 长度超限
+                    cm = await kookApi.get_card_msg(text)
+                    await ch.send(cm) # 发送
+                    _log.info(f"[spr] msg send {page}")
+                    page+=1 # 重置
+                    text = f"**这是一个助力者感谢的测试**\n本服务器助力者感谢初始化 page: {page}\n\n"
+                    await asyncio.sleep(0.2)
+            # 遍历完成之后再发送一次
+            cm = await kookApi.get_card_msg(text)
+            await ch.send(cm)
+        # 发送配置成功提示信息
         text_reply = f"{guild_text}成功! 第一波感谢信息已送出~\n频道：(chn){ch.id}(chn)\n频道id：{ch_id}\n"
         cm = await kookApi.get_card_msg(text_reply,img_url=kookApi.icon_cm.correct)
         await msg.reply(cm)
@@ -195,13 +206,25 @@ async def thanks_sponser_task():
                 # 配置的感谢信息
                 base_send_text:str = TempDict['guild'][guild_id]['send_text']
                 is_met_in = "(met)(met)" in base_send_text # 正确配置了
+                last_user = {} # 上一个用户
                 for its in ret:
                     # 信息不在，才发送
                     if not await check_sponsor(TempDict,guild_id,its):
+                        # 初始化上一个用户
+                        if not last_user:last_user = its
+                        # 如果当前用户和上一个用户相同，直接跳过（合并成一个）
+                        elif its['user_id'] == last_user['user_id'] and its["start_time"] == last_user["start_time"]:
+                            last_user = its
+                            continue
+                        # 设置上一个用户
+                        last_user = its
+                        # 正确配置了才用用户自定义的text
                         if is_met_in:
                             send_text+= base_send_text.replace("(met)(met)",f"(met){its['user']['id']}(met)")
+                            send_text+= f" {getTimeFromStamp(its['start_time'])}"
                         else:
-                            send_text+= f"感谢 (met){its['user']['id']}(met)\n"
+                            send_text+= f"感谢 (met){its['user']['id']}(met) 对本服务器的助力 {getTimeFromStamp(its['start_time'])}\n"
+                        # 添加到记录中
                         log_text += f"({its['user']['id']}_{its['user']['username']}#{its['user']['identify_num']}) "
                     # 如果感谢信息超过了3000字，就需要提前发出
                     if len(send_text) > 3000:
