@@ -97,11 +97,16 @@ ConfPath = './config/config.json'
 LogPath = './log'
 """根路径"""
 GuildLogPath = './log/GuildLog.json'
+"""服务器助力者日志文件路径"""
+AfdPath = "./log/AfdWebhook.json"
+"""爱发电的wh请求文件路径"""
 
 config = open_file(ConfPath)
 """机器人配置文件"""
 SponsorDict = {}
 """服务器助力者日志"""
+AfdWebhook = {}
+"""爱发电的wh请求"""
 # 初始化机器人方便其他模组调用
 bot = Bot(token=config['bot']['token'])  # websocket
 """main bot"""
@@ -117,7 +122,7 @@ try:
     # 如果log路径不存在，创建log文件夹
     if (not os.path.exists(LogPath)):
         os.makedirs(LogPath)  # 文件夹不存在，创建
-    # 自动创建TicketLog和TicketMsgLog日志文件
+    # 自动创建日志文件
     if (not create_logFile(GuildLogPath , {
             "data": {},
             "del_guild": {},
@@ -125,8 +130,15 @@ try:
             "guild":{}
     })):
         os.abort()  # err,退出进程
+    if (not create_logFile(AfdPath , {
+            "data": {},
+            "guild":{},
+            "user":{}
+    })):
+        os.abort()  # err,退出进程
 
     SponsorDict = open_file(GuildLogPath)
+    AfdWebhook = open_file(AfdPath)
 
     _log.info(f"[BOT.START] open log.files success!")
 except:
