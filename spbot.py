@@ -161,7 +161,8 @@ async def spr_set(msg:Message,channel:str="",*arg):
             cm = await kookApi.get_card_msg(text)
             await ch.send(cm)
         # 发送配置成功提示信息
-        text_reply = f"{guild_text}成功! 第一波感谢信息已送出~\n频道：(chn){ch.id}(chn)\n频道id：{ch_id}\n"
+        text_send = "第一波感谢信息已送出~" if ret else ""
+        text_reply = f"{guild_text}成功! {text_send}\n频道：(chn){ch.id}(chn)\n频道id：{ch_id}\n"
         cm = await kookApi.get_card_msg(text_reply,img_url=kookApi.icon_cm.correct)
         await msg.reply(cm)
         # 写入文件
