@@ -35,7 +35,7 @@ async def save_file_task():
 ######################################################################################
 
 
-@bot.command(name="hh")
+@bot.command(name="hh",case_sensitive=False)
 async def hello(msg:Message,*arg):
     logging(msg)
     try:
@@ -43,15 +43,19 @@ async def hello(msg:Message,*arg):
     except Exception as result:
         await BaseException_Handler("hh",traceback.format_exc(),msg,debug_ch)
         
-@bot.command(name="sphelp")
+@bot.command(name="sphelp",aliases=['sp-help','sp-h'],case_sensitive=False)
 async def help(msg:Message,*arg):
     logging(msg)
     try:
         text = "`/hh` 测试bot是否上线/是否有发言权限\n"
         text+= "`/spr` 在 当前 频道发送助力者感谢信息\n"
         text+= "`/spr #文字频道` 在 指定 频道发送助力者感谢信息\n"
-        text+=f"设置完成后，bot会每{THX_TASK_INTERVEL}m获取最新的助力者id，并在服务器内发送感谢信息\n"
         text+= "`/spr-d` 取消助力者提醒\n"
+        text+= "`/spr-text 内容` 配置感谢助力者的文字，需要有`(met)(met)`来标识@用户的位置。默认配置：\n"
+        text+= "```\n感谢 (met)(met) 对本服务器的助力\n```\n"
+        text+= "默认配置的效果：\n"
+        text+= "```\n感谢 @用户A 对本服务器的助力\n```\n"
+        text+=f"设置完成后，bot会每{THX_TASK_INTERVEL}m获取最新的助力者id，并在服务器内发送配置好的感谢信息\n"
         cm = CardMessage()
         c = Card(Module.Header(f"本bot支持的命令如下"),Module.Context(Element.Text(f"开机于：{start_time} | 开源代码见 [Github](https://github.com/musnwos/Kook-SponsorRole-Bot)",Types.Text.KMD)),Module.Divider())
         c.append(Module.Section(Element.Text(text, Types.Text.KMD)))
@@ -62,7 +66,7 @@ async def help(msg:Message,*arg):
     except Exception as result:
         await BaseException_Handler("sphep",traceback.format_exc(),msg,debug_ch)
 
-##################################################################################################
+##############################################################################################
 
 async def del_guild_log(guild_id:str):
     """删除出错服务器"""
@@ -75,14 +79,19 @@ async def check_sponsor(sp_dict:dict,guild_id:str,user_info:str)->bool:
     """检查一个助力者信息是否在已有日志中"""
     return user_info in sp_dict[guild_id]
 
-# 删除提醒
-@bot.command(name="spr-d")
-async def spr_delete(msg:Message,*arg):
+async def pm_send(msg:Message):
+    """记录消息并判断是否为私聊"""
     if not logging(msg):
         await msg.reply(f"当前命令需要在公共服务器内使用！")
         _log.info(f"[PrivateMessage] Au:{msg.author_id} inform reply, return")
-        return
+        return False
+    return True
+
+# 删除提醒
+@bot.command(name="spr-d",case_sensitive=False)
+async def spr_delete(msg:Message,*arg):
     try:
+        if not await pm_send(msg):return 
         global SponsorDict
         guild_id = msg.ctx.guild.id
         if guild_id not in SponsorDict['guild']:
@@ -96,18 +105,13 @@ async def spr_delete(msg:Message,*arg):
         await msg.reply(f"助力者提醒删除成功")
         _log.info(f"[spr-d] G:{guild_id} Au:{msg.author_id} move to del_guild")
     except Exception as result:
-        await BaseException_Handler("spr-d",traceback.format_exc(),msg,bot)
-        err_str = f"ERR! [{getTime()}] spr-d\n```\n{traceback.format_exc()}\n```"
-        await bot.client.send(debug_ch, err_str)#发送错误信息到指定频道
+        await BaseException_Handler("spr-d",traceback.format_exc(),msg)
 
 # 设置助力者
-@bot.command(name="spr")
+@bot.command(name="spr",case_sensitive=False)
 async def spr_set(msg:Message,channel:str="",*arg):
-    if not logging(msg):
-        await msg.reply(f"当前命令需要在公共服务器内使用！")
-        _log.info(f"[PrivateMessage] Au:{msg.author_id} inform reply, return")
-        return
     try:
+        if not await pm_send(msg):return 
         global SponsorDict
         guild_id = msg.ctx.guild.id
         # 有显式设置频道
@@ -162,11 +166,33 @@ async def spr_set(msg:Message,channel:str="",*arg):
         await msg.reply(cm)
         # 写入文件
         await save_all_files()
-        _log.info(f"[spr] G:{guild_id} | C:{ch_id} | Au:{msg.author_id} | set success")
+        _log.info(f"[spr] G:{msg.ctx.guild.id} | target_ch:{ch_id} | Au:{msg.author_id} | set success")
     except Exception as result:
-        await BaseException_Handler("spr",traceback.format_exc(),msg,bot)
-        err_str = f"ERR! [{getTime()}] spr\n```\n{traceback.format_exc()}\n```"
-        await bot.client.send(debug_ch, err_str)#发送错误信息到指定频道
+        await BaseException_Handler("spr",traceback.format_exc(),msg)
+
+# 配置提醒的text
+@bot.command(name='spr-text',case_sensitive=False)
+async def spornser_test_cmd(msg:Message,*arg):
+    try:
+        if not await pm_send(msg):return 
+        global SponsorDict
+        guild_id = msg.ctx.guild.id
+        if guild_id not in SponsorDict['guild']:
+            return await msg.reply(f"您需要先执行`/spr`设置感谢助力者信息发送频道，才能执行本命令。详见`/sphelp`")
+        if "\\(met\\)\\(met\\)" not in msg.content: 
+            return await msg.reply(f"配置的感谢提醒信息中，需要用`(met)(met)`来标识@用户文字的位置。详见`/sphelp`")
+        send_text = " ".join(arg)
+        SponsorDict['guild'][guild_id]["send_text"] = send_text.replace("\\(met\\)\\(met\\)","(met)(met)")
+        text = "**设置成功!**\n"
+        text+=f"感谢消息示例：\n"
+        text+= send_text.replace("(met)(met)",f"(met){msg.author_id}(met)")
+        cm = await kookApi.get_card_msg(text,img_url=kookApi.icon_cm.correct)
+        await msg.reply(cm)
+        _log.info(f"[spr-test] G:{msg.ctx.guild.id} | Au:{msg.author_id} | set text success")
+    except Exception as result:
+        await BaseException_Handler("spr-text",traceback.format_exc(),msg)
+
+#########################################################################################
 
 async def guild_test(guild_id:str):
     """机器人不在服务器，没办法获取服务器信息，直接删除键值"""
