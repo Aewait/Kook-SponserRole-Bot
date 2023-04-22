@@ -12,6 +12,7 @@ from utils.file import bot,config,SponsorDict,logging,BaseException_Handler,save
 from utils.myLog import _log
 from utils.gtime import getTime,getTimeFromStamp
 from utils import kookApi,help
+from utils.afd import afdCmd
 
 debug_ch:Channel
 """发送错误日志的频道"""
@@ -43,7 +44,7 @@ async def hello(msg:Message,*arg):
 async def help_cmd(msg:Message,*arg):
     logging(msg)
     try:
-        cm = help.get_help_card()
+        cm = await help.get_help_card()
         await msg.reply(cm)
     except Exception as result:
         await BaseException_Handler("sphep",traceback.format_exc(),msg,debug_ch)
@@ -275,6 +276,7 @@ async def loading_channel(b:Bot):
         global debug_ch
         debug_ch = await bot.client.fetch_public_channel(config['debug_ch'])
         _log.info("[BOT.START] fetch_public_channel success")
+        afdCmd.init(bot,debug_ch)
     except:
         _log.exception("[BOT.START] fetch_public_channel failed")
         os._exit(-1)  #出现错误直接退出程序

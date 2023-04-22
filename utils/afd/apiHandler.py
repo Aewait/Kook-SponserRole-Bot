@@ -25,24 +25,25 @@ async def afd_request(request):
     AfdWebhook['data'].append(params)
     plan_id = params['data']['order']['plan_id']
     # 商品id有被绑定
-    if plan_id in AfdWebhook['guild']:
+    if plan_id in AfdWebhook['plan']:
         # 初始化频道id和服务器id
         ch_id,guild_id = "none","none"
         try:
             # 发送到指定频道的信息
-            guild_id = AfdWebhook['guild'][plan_id]['guild_id']
-            ch_id = AfdWebhook['guild'][plan_id]['channel_id']
+            guild_id = AfdWebhook['plan'][plan_id]['guild_id']
+            ch_id = AfdWebhook['plan'][plan_id]['channel_id']
             ch = await bot.client.fetch_public_channel(ch_id) # 获取频道对象
             # 频道成功获取，才构造text
             text = ""
             if 'plan_title' in params['data']['order']:
-                text = f"商品 {params['data']['order']['plan_title']}\n"
+                text = f"商品：{params['data']['order']['plan_title']}\n"
+                text+= f"商品ID：{plan_id}"
             user_id = params['data']['order']['user_id'] # afd用户id
             user_id = user_id[0:6]
-            text += f"用户 {user_id}\n"
+            text += f"用户：{user_id}\n"
             for i in params['data']['order']['sku_detail']:
-                text += f"发电了{i['count']}个 {i['name']}\n"
-            text += f"共计 {params['data']['order']['total_amount']} 猿\n"
+                text += f"发电了{i['count']}个：{i['name']}\n"
+            text += f"共计：{params['data']['order']['total_amount']} 元\n"
             # 将订单编号中间部分改为#
             trno = params['data']['order']['out_trade_no']
             trno_f = trno[0:8]

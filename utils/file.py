@@ -135,8 +135,9 @@ try:
     })):
         os.abort()  # err,退出进程
     if (not create_logFile(AfdPath , {
-            "data": {},
+            "data": [],
             "guild":{},
+            "plan":{},
             "user":{}
     })):
         os.abort()  # err,退出进程
