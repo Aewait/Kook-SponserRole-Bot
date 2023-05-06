@@ -1,6 +1,6 @@
 .PHONY:ps
 ps:
-	ps jax | head -1 && ps jax | grep spbot.py | grep start.py |  grep -v grep
+	ps jax | head -1 && ps jax | grep spbot.py |  grep -v grep
 
 .PHONY:bot
 bot:
