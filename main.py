@@ -214,6 +214,8 @@ async def thanks_sponser_task():
                     continue
                 # 用户数量不同，遍历检查
                 log_text = f"[BOT.THX.TASK] {getTime()} | G:{guild_id} NewSp:"
+                # 先更新本地记录
+                SponsorDict['data'][guild_id] = ret
                 # 发送感谢信息的文字频道
                 channel = await bot.client.fetch_public_channel(TempDict['guild'][guild_id]['channel_id'])
                 # 配置的感谢信息
