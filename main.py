@@ -55,8 +55,10 @@ async def del_guild_log(guild_id:str):
     """删除出错服务器"""
     global SponsorDict
     SponsorDict['err_guild'][guild_id] = SponsorDict['guild'][guild_id]
-    del SponsorDict['data'][guild_id]
-    del SponsorDict['guild'][guild_id]
+    if guild_id in SponsorDict['data']: # 加个判断避免报错
+        del SponsorDict['data'][guild_id]
+    if guild_id in SponsorDict['guild']:
+        del SponsorDict['guild'][guild_id]
 
 async def check_sponsor(sp_dict:dict,guild_id:str,user_info:str)->bool:
     """检查一个助力者信息是否在已有日志中"""
