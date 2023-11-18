@@ -23,7 +23,7 @@ async def get_help_card():
     text+=f"设置完成后，如果爱发电有人购买指定商品，则会发送信息到当前频道。"
     text+=f"商品id只能被一个服务器绑定。绑定后，其余服务器无法绑定\n"
     text+=f"爱发电webhook管理页：[开发者](https://afdian.net/dashboard/dev)\n"
-    text+=f"机器人webhook回调地址：[填我](https://afd-wh.musnow.top/afd)\n"
+    text+=f"机器人webhook回调地址：[填我](https://afd-wh.musnow.top/spbot/afd)\n"
     cm = CardMessage()
     c = Card(Module.Header(f"本bot支持的命令如下"),Module.Context(Element.Text(f"开机于：{start_time} | 开源代码见 [Github](https://github.com/musnwos/Kook-SponsorRole-Bot)",Types.Text.KMD)),Module.Divider())
     c.append(Module.Section(Element.Text(text, Types.Text.KMD)))
