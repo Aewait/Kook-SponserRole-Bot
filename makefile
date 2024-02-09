@@ -4,8 +4,8 @@ ps:
 
 .PHONY:bot
 bot:
-	nohup python3.10 -u main.py >> ./log/nohup.log 2>&1 &
+	nohup python3.10 -u main.py >> /dev/null 2>&1 &
 
 .PHONY:run
 run:
-	nohup python3.10 -u spbot.py >> ./log/nohup.log 2>&1 &
+	nohup python3.10 -u spbot.py >> /dev/null 2>&1 &
